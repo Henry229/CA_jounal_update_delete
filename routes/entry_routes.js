@@ -1,5 +1,5 @@
 import express from 'express';
-import { EntryModel } from '../db.js';
+import { EntryModel, CategoryModel } from '../db.js';
 
 const router = express.Router();
 
@@ -25,7 +25,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-//update
+// Update
 router.put('/:id', async (req, res) => {
   const { category, content } = req.body;
   const newEntry = { category, content };
@@ -44,7 +44,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-//Delete
+// Delete
 router.delete('/:id', async (req, res) => {
   try {
     const entry = await EntryModel.findByIdAndDelete(req.params.id);
@@ -62,12 +62,15 @@ router.post('/', async (req, res) => {
   try {
     // 1. Create a new entry object with values passed in from the request
     const { category, content } = req.body;
-    const newEntry = { category, content };
+    const categoryObject = await CategoryModel.findOne({ name: category });
+    const newEntry = { category: categoryObject._id, content };
     // 2. Push the new entry to the entries array
     // entries.push(newEntry)
     const insertedEntry = await EntryModel.create(newEntry);
     // 3. Send the new entry with 201 status
-    res.status(201).send(insertedEntry);
+    res
+      .status(201)
+      .send(await insertedEntry.populate({ path: 'category', select: 'name' }));
   } catch (err) {
     res.status(500).send({ error: err.message });
   }
